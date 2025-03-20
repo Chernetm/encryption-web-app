@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Encryption & Decryption</title>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            margin: 0;
+        }
+        .container {
+            width: 80%;
+            max-width: 900px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            color: #333;
+            display: flex;
+        }
+        .half {
+            width: 50%;
+            padding: 20px;
+        }
+        .left {
+            border-right: 2px solid #ddd;
+        }
+        .right {
+            text-align: left;
+        }
+        h2 {
+            text-align: center;
+            color: #1e3c72;
+        }
+        textarea, input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            resize: none;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            width: 48%;
+            padding: 12px;
+            font-size: 16px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .error {
+            border: 2px solid red;
+            background: #ffdcdc;
+        }
+        .message {
+            font-size: 14px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Left Side - Encryption -->
+        <div class="half left">
+            <h2>🔐 Encrypt</h2>
+            <textarea id="plaintext" placeholder="Enter text to encrypt..."></textarea>
+            <input type="text" id="key" placeholder="Enter secret key" oninput="validateKeyLength()">
+            <select id="algorithm" onchange="validateKeyLength()">
+                <option value="otp">OTP (Any key length)</option>
+                <option value="3des">3DES (24 chars key required)</option>
+                <option value="aes">AES (32 chars key required)</option>
+            </select>
+            <p id="keyMessage" class="message"></p>
+
+            <div class="buttons">
+                <button onclick="encrypt()"><i class="fas fa-lock"></i> Encrypt</button>
+            </div>
+
+            <h3>📝 Encrypted Text</h3>
+            <textarea id="encryptedText" placeholder="Encrypted text will appear here..." readonly></textarea>
+        </div>
+
+        <!-- Right Side - Decryption -->
+        <div class="half right">
+            <h2>🔓 Decrypt</h2>
+            <textarea id="decryptionInput" placeholder="Enter encrypted text..."></textarea>
+            <div class="buttons">
+                <button onclick="decrypt()"><i class="fas fa-unlock"></i> Decrypt</button>
+            </div>
+
+            <h3>📜 Decrypted Text</h3>
+            <textarea id="decryptedText" placeholder="Decrypted text will appear here..." readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        function validateKeyLength() {
+            const keyInput = document.getElementById("key");
+            const algorithm = document.getElementById("algorithm").value;
+            const key = keyInput.value;
+            const message = document.getElementById("keyMessage");
+
+            if (algorithm === "3des" && key.length !== 24) {
+                keyInput.classList.add("error");
+                message.innerText = "3DES requires a key of exactly 24 characters!";
+            } else if (algorithm === "aes" && key.length !== 32) {
+                keyInput.classList.add("error");
+                message.innerText = "AES requires a key of exactly 32 characters!";
+            } else {
+                keyInput.classList.remove("error");
+                message.innerText = "";
+            }
+        }
+
+        async function encrypt() {
+            const text = document.getElementById("plaintext").value;
+            const key = document.getElementById("key").value;
+            const algorithm = document.getElementById("algorithm").value;
+
+            if (!text || !key) {
+                alert("Please enter text and key!");
+                return;
+            }
+
+            if ((algorithm === "3des" && key.length !== 24) || (algorithm === "aes" && key.length !== 32)) {
+                alert("Invalid key length! Please correct it.");
+                return;
+            }
+
+            const response = await fetch("http://localhost:3000/encrypt", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text, key, algorithm })
+            });
+
+            const data = await response.json();
+            document.getElementById("encryptedText").value = data.encrypted || "Error in encryption!";
+        }
+
+        async function decrypt() {
+            const encryptedText = document.getElementById("decryptionInput").value;
+            const key = document.getElementById("key").value;
+            const algorithm = document.getElementById("algorithm").value;
+
+            if (!encryptedText || !key) {
+                alert("Please enter encrypted text and key!");
+                return;
+            }
+
+            if ((algorithm === "3des" && key.length !== 24) || (algorithm === "aes" && key.length !== 32)) {
+                alert("Invalid key length! Please correct it.");
+                return;
+            }
+
+            const response = await fetch("http://localhost:3000/decrypt", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ encryptedText, key, algorithm })
+            });
+
+            const data = await response.json();
+            document.getElementById("decryptedText").value = data.decrypted || "Error in decryption!";
+        }
+    </script>
+
+</body>
+</html>
+
+
+
